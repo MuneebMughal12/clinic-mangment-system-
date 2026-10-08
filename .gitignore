@@ -1,0 +1,16 @@
+node_modules/
+out/
+dist/
+output/
+tmp/
+.smoke-*/
+.smoke-data*/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.log
+smoke-*.png
+.smoke-data/
+.smoke-data-*/
+.env
+*.before-admin-migration.bak
