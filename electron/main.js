@@ -11,6 +11,9 @@ import { createAdminCredentials } from "./admin-credentials.js";
 import { startUpdateChecks } from "./update-service.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
+const windowIcon = app.isPackaged
+  ? join(process.resourcesPath, "app-icon.ico")
+  : join(here, "../../build/icon.ico");
 const testDataDir = !app.isPackaged && process.env.CLINIC_DESK_TEST_DATA_DIR;
 app.setName("clinic-desk");
 const dataDir = testDataDir || join(app.getPath("appData"), "clinic-desk");
@@ -31,6 +34,7 @@ const backups = createBackupService(dataDir, () => store, (next) => { store = ne
 function showOpeningWindow() {
   if (openingWindow && !openingWindow.isDestroyed()) return;
   openingWindow = new BrowserWindow({
+    icon: windowIcon,
     width: 460,
     height: 260,
     resizable: false,
@@ -51,6 +55,7 @@ function finishOpening() {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
+    icon: windowIcon,
     width: 1280,
     height: 820,
     minWidth: 960,

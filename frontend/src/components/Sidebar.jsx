@@ -4,7 +4,6 @@ import {
   BookOpen,
   ChevronDown,
   DatabaseBackup,
-  HeartPulse,
   LockKeyhole,
   LogOut,
   Settings,
@@ -13,6 +12,7 @@ import {
   UsersRound,
   Waves,
 } from "lucide-react";
+import appIcon from "../assets/app-icon.png";
 
 export default function Sidebar({
   doctor,
@@ -37,7 +37,7 @@ export default function Sidebar({
     <aside className="sidebar">
       <div className="brand">
         <span className="brand-icon">
-          <HeartPulse size={25} />
+          <img src={appIcon} alt="" width="37" height="37" />
         </span>
         <span>
           Clinic<span className="brand-light">Desk</span>

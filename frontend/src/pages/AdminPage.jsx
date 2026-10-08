@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Download, HeartPulse, LogOut, Plus, RotateCcw, Save } from "lucide-react";
+import { Download, LogOut, Plus, RotateCcw, Save } from "lucide-react";
+import appIcon from "../assets/app-icon.png";
 import Field from "../components/Field.jsx";
 import PasswordField from "../components/PasswordField.jsx";
 import { clinicPreset } from "../../../shared/clinic-preset.js";
@@ -139,7 +140,7 @@ export default function AdminPage({ logout }) {
       <header className="admin-topbar">
         <div className="admin-brand">
           <span className="brand-icon">
-            <HeartPulse size={23} />
+            <img src={appIcon} alt="" width="37" height="37" />
           </span>
           <strong>
             ClinicDesk <small>ADMIN</small>

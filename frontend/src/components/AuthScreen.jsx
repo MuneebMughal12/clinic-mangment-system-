@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ArrowRight, HeartPulse, LockKeyhole } from "lucide-react";
+import { ArrowRight, LockKeyhole } from "lucide-react";
+import appIcon from "../assets/app-icon.png";
 import Field from "./Field.jsx";
 import PasswordField from "./PasswordField.jsx";
 
@@ -37,12 +38,12 @@ export default function AuthScreen({ onSuccess, needsAdminSetup = false }) {
   return (
     <div className="auth-page">
       <div className="auth-visual">
-        <div className="auth-visual-brand"><span className="auth-visual-icon"><HeartPulse size={24} /></span> ClinicDesk</div>
+        <div className="auth-visual-brand"><span className="auth-visual-icon"><img src={appIcon} alt="" width="40" height="40" /></span> ClinicDesk</div>
         <div className="auth-visual-copy"><span>YOUR OFFLINE CLINIC WORKSPACE</span><h2>Care you can trust.</h2><p>Patient records, prescriptions and reports, all in one place.</p></div>
         <span className="auth-visual-footer">PRIVATE · LOCAL · RELIABLE</span>
       </div>
       <div className="auth-main"><div className="auth-card">
-        <div className="auth-mark"><HeartPulse size={27} strokeWidth={2.2} /></div>
+        <div className="auth-mark"><img src={appIcon} alt="Clinic Desk" width="58" height="58" /></div>
         <span className="eyebrow">OFFLINE CLINIC SOFTWARE</span>
         <h1>{needsAdminSetup ? "Set up admin access" : "Welcome back"}</h1>
         <p>{needsAdminSetup ? "Create the admin login for this computer. Keep these credentials safe; they are needed to create clinic accounts and restore backups." : "Enter your username and password to open your workspace."}</p>
