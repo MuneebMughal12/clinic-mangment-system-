@@ -113,6 +113,32 @@ test("applying fixed stationery to an older account fills Urdu print details wit
   }
 });
 
+test("former fixed ultrasound qualification updates on restart without changing another doctor's profile", () => {
+  const directory = mkdtempSync(join(tmpdir(), "clinic-qualification-upgrade-"));
+  const file = join(directory, "clinic.sqlite");
+  const previous = "MBBS, PGD in Medical Diagnostic Ultrasound\nEx Senior Speciality Registrar\nDepartment of Clinical & Diagnostic Radiology\nCMH Kharian";
+  let store;
+  try {
+    store = openStore(file);
+    const clinic = store.createClinicAccount({ fixedStationery: true, username: "owner", password: "owner-password-123" });
+    store.createDoctorAccount(clinic.id, {
+      username: "second-doctor", password: "doctor-password-123", doctorName: "Dr Other",
+      doctorQualificationUltrasound: "Custom ultrasound qualification",
+    });
+    store.close();
+    store = null;
+    const db = new DatabaseSync(file);
+    db.prepare("UPDATE clinics SET doctor_qualification_ultrasound = ? WHERE id = ?").run(previous, clinic.id);
+    db.close();
+    store = openStore(file);
+    assert.equal(store.clinicLogin("owner", "owner-password-123").doctorQualificationUltrasound, clinicPreset.doctorQualificationUltrasound);
+    assert.equal(store.clinicLogin("second-doctor", "doctor-password-123").doctorQualificationUltrasound, "Custom ultrasound qualification");
+  } finally {
+    store?.close();
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("clinic accounts keep patients and cases separate across restarts", () => {
   const directory = mkdtempSync(join(tmpdir(), "clinic-desk-test-"));
   const file = join(directory, "clinic.sqlite");

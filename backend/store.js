@@ -3,6 +3,8 @@ import { existsSync, unlinkSync } from "node:fs";
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { clinicPreset } from "../shared/clinic-preset.js";
 
+const previousUltrasoundQualification = "MBBS, PGD in Medical Diagnostic Ultrasound\nEx Senior Speciality Registrar\nDepartment of Clinical & Diagnostic Radiology\nCMH Kharian";
+
 const patientColumns = `
   id, mr_number AS mrNumber, name, age_years AS ageYears,
   date_of_birth AS dateOfBirth, gender, relationship, phone, address,
@@ -299,6 +301,16 @@ export function openStore(filePath) {
       throw error;
     }
   }
+
+  // Refresh only the former fixed owner preset. Additional doctors and
+  // individually edited qualifications keep their own saved wording.
+  db.prepare(`UPDATE clinics SET doctor_qualification_ultrasound = ?
+    WHERE fixed_stationery = 1 AND doctor_name = ?
+      AND doctor_qualification_ultrasound = ?`).run(
+    clinicPreset.doctorQualificationUltrasound,
+    clinicPreset.doctorName,
+    previousUltrasoundQualification,
+  );
 
   function listClinicAccounts() {
     return db
