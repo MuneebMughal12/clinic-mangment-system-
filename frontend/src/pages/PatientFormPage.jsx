@@ -36,6 +36,9 @@ const initialDetails = {
   },
   ultrasound: {
     reportType: "Female Pelvis",
+    reportStyle: "pelvis",
+    reportBody: "",
+    sections: [],
     referringPhysician: "",
     examinationDate: "",
     clinicalIndication: "",
@@ -81,11 +84,11 @@ function FieldInput({
   );
 }
 
-function FieldText({ label, value, onChange, placeholder }) {
+function FieldText({ label, value, onChange, placeholder, rows = 3 }) {
   return (
     <Field label={label} wide>
       <textarea
-        rows="3"
+        rows={rows}
         value={value ?? ""}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
@@ -117,6 +120,13 @@ export default function PatientFormPage({
     setPatient((current) => ({ ...current, [key]: value }));
   const updateDetail = (key, value) =>
     setDetails((current) => ({ ...current, [key]: value }));
+  const updateReportSection = (index, value) =>
+    setDetails((current) => ({
+      ...current,
+      sections: current.sections.map((section, i) =>
+        i === index ? { ...section, text: value } : section,
+      ),
+    }));
 
   useEffect(() => {
     let cancelled = false;
@@ -579,6 +589,33 @@ export default function PatientFormPage({
                 value={details.technique}
                 onChange={(value) => updateDetail("technique", value)}
               />
+              {details.reportStyle === "sections" ? (
+                <>
+                  {(details.sections || []).map((section, index) => (
+                    <FieldText key={index} label={section.label || `Finding ${index + 1}`}
+                      value={section.text}
+                      onChange={(value) => updateReportSection(index, value)}
+                      rows={Math.min(6, Math.max(3, Math.ceil((section.text?.length || 0) / 95)))} />
+                  ))}
+                  <FieldText label="Impression" value={details.impression}
+                    onChange={(value) => updateDetail("impression", value)} />
+                </>
+              ) : details.reportStyle === "general" ? (
+                <>
+                  <FieldText
+                    label="Findings and measurements"
+                    value={details.reportBody}
+                    onChange={(value) => updateDetail("reportBody", value)}
+                    rows={16}
+                  />
+                  <FieldText
+                    label="Impression"
+                    value={details.impression}
+                    onChange={(value) => updateDetail("impression", value)}
+                  />
+                </>
+              ) : (
+                <>
               <FieldText
                 label="Urinary bladder"
                 value={details.bladder}
@@ -671,16 +708,15 @@ export default function PatientFormPage({
                 value={details.impression}
                 onChange={(value) => updateDetail("impression", value)}
               />
+                </>
+              )}
               <div className="clinical-checks">
                 <label>
                   <input
                     type="checkbox"
                     checked={Boolean(details.transvaginalPerformed)}
                     onChange={(event) =>
-                      updateDetail(
-                        "transvaginalPerformed",
-                        event.target.checked,
-                      )
+                      updateDetail("transvaginalPerformed", event.target.checked)
                     }
                   />{" "}
                   Transvaginal examination performed

@@ -759,6 +759,45 @@ test("doctor finalization preserves an amendment history and enforces consent", 
   }
 });
 
+test("supplied ultrasound drafts stay editable and cannot finalize with blank measurements", () => {
+  const store = openStore(":memory:");
+  try {
+    const clinic = store.createClinicAccount({
+      clinicName: "Clinic A", doctorName: "Dr A", username: "clinic-a", password: "password-a",
+    });
+    const base = {
+      module: "ultrasound",
+      patient: { name: "Patient A" },
+      details: {
+        reportStyle: "general", reportType: "Abdomen", technique: "Transabdominal",
+        reportBody: "Liver measures ____ cm.", impression: "Reviewed finding",
+      },
+      finalize: true, reviewConfirmed: true,
+    };
+    assert.throws(() => store.saveEncounter(clinic.id, base), /blank measurement/i);
+    const saved = store.saveEncounter(clinic.id, {
+      ...base, details: { ...base.details, reportBody: "Liver measures 13 cm." },
+    });
+    assert.equal(saved.status, "final");
+    assert.equal(saved.details.reportBody, "Liver measures 13 cm.");
+    assert.throws(() => store.saveEncounter(clinic.id, {
+      module: "ultrasound", patientId: saved.patientId,
+      details: { reportStyle: "sections", reportType: "Abdomen", technique: "Transabdominal",
+        sections: [{ label: "Liver", text: "Measures ____ cm." }], impression: "Reviewed" },
+      finalize: true, reviewConfirmed: true,
+    }), /blank measurement/i);
+    const structured = store.saveEncounter(clinic.id, {
+      module: "ultrasound", patientId: saved.patientId,
+      details: { reportStyle: "sections", reportType: "Abdomen", technique: "Transabdominal",
+        sections: [{ label: "Liver", text: "Measures 13 cm." }], impression: "Reviewed" },
+      finalize: true, reviewConfirmed: true,
+    });
+    assert.equal(structured.details.sections[0].label, "Liver");
+  } finally {
+    store.close();
+  }
+});
+
 test("SQLite backup can be reopened with patients and final records intact", () => {
   const directory = mkdtempSync(join(tmpdir(), "clinic-desk-backup-"));
   const source = join(directory, "source.sqlite");

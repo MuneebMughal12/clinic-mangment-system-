@@ -274,6 +274,39 @@ function UltrasoundSheet({ encounter, account, firstPageOnly = false }) {
             {d.consentRecorded ? "Yes" : "No"}
           </ReportSection>
         )}
+        {d.reportStyle === "sections" ? (
+          <>
+            <h2>Findings</h2>
+            {(d.sections || []).map((section, index) => (
+              <ReportSection key={index} title={section.label || `Finding ${index + 1}`}>
+                {section.text}
+              </ReportSection>
+            ))}
+            {!firstPageOnly && <>
+              <section className="report-impression">
+                <h2>Impression</h2>
+                <p>{value(d.impression)}</p>
+              </section>
+              <div className="report-signature">
+                Doctor signature / stamp: ______________________
+              </div>
+            </>}
+          </>
+        ) : d.reportStyle === "general" ? (
+          <>
+            <h2>Findings</h2>
+            <ReportSection title="Report findings and measurements">{d.reportBody}</ReportSection>
+            {!firstPageOnly && <>
+              <section className="report-impression">
+                <h2>Impression</h2>
+                <p>{value(d.impression)}</p>
+              </section>
+              <div className="report-signature">
+                Doctor signature / stamp: ______________________
+              </div>
+            </>}
+          </>
+        ) : <>
         <h2>Findings</h2>
         <ReportSection title="Urinary bladder">{d.bladder}</ReportSection>
         <ReportSection title="Uterus">
@@ -323,6 +356,7 @@ function UltrasoundSheet({ encounter, account, firstPageOnly = false }) {
         <div className="report-signature">
           Doctor signature / stamp: ______________________
         </div></>}
+        </>}
       </div>
       <div className="ultrasound-notices" aria-label="Ultrasound report notes">
         <ul>

@@ -2426,6 +2426,7 @@ p {
 }
 .library-field input,
 .library-field textarea,
+.library-field select,
 .library-add-medicine select {
   width: 100%;
   min-width: 0;
@@ -2439,6 +2440,9 @@ p {
     sans-serif;
 }
 .library-field input {
+  min-height: 39px;
+}
+.library-field select {
   min-height: 39px;
 }
 .library-field textarea {

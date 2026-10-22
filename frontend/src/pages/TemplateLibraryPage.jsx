@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { BookOpen, Plus, Save, Trash2 } from "lucide-react";
 import { femalePelvisTemplate } from "../reportTemplates.js";
+import ultrasoundCatalog from "../ultrasoundCatalog.json";
+import { structuredUltrasoundDraft } from "../ultrasoundSections.js";
 
 const medicineFields = [
   ["Medicine name", "name"],
@@ -37,7 +39,10 @@ const blankMedicine = () =>
   Object.fromEntries(medicineFields.map(([, key]) => [key, ""]));
 const blankReport = () => ({
   ...Object.fromEntries(ultrasoundFields.map(([, key]) => [key, ""])),
-  reportType: "Female Pelvis",
+  reportType: "",
+  reportStyle: "sections",
+  reportBody: "",
+  sections: [{ label: "Findings", text: "" }],
 });
 const blankPlan = () => ({
   complaints: "",
@@ -73,12 +78,21 @@ function normalizeData(type, source = {}) {
       advice: source.advice ?? "",
       followUp: source.followUp ?? "",
     };
-  return Object.fromEntries(
-    ultrasoundFields.map(([, key]) => [
-      key,
-      source[key] ?? (key === "reportType" ? "Female Pelvis" : ""),
-    ]),
-  );
+  const sourceData = source.reportBody && !source.sections
+    ? structuredUltrasoundDraft(source)
+    : source;
+  return {
+    ...Object.fromEntries(
+      ultrasoundFields.map(([, key]) => [key, sourceData[key] ?? ""]),
+    ),
+    reportStyle: sourceData.reportStyle || "pelvis",
+    reportBody: sourceData.reportBody ?? "",
+    sections: Array.isArray(sourceData.sections)
+      ? sourceData.sections.map((section) => ({
+          label: String(section.label || ""), text: String(section.text || ""),
+        }))
+      : [],
+  };
 }
 
 function message(error) {
@@ -88,13 +102,13 @@ function message(error) {
   );
 }
 
-function TextField({ label, value, onChange, multiline = false }) {
+function TextField({ label, value, onChange, multiline = false, rows = 3 }) {
   return (
     <label className="library-field">
       <span>{label}</span>
       {multiline ? (
         <textarea
-          rows={3}
+          rows={rows}
           value={value ?? ""}
           onChange={(event) => onChange(event.target.value)}
         />
@@ -154,6 +168,14 @@ export default function TemplateLibraryPage() {
 
   function update(key, value) {
     setData((current) => ({ ...current, [key]: value }));
+  }
+  function updateSection(index, key, value) {
+    setData((current) => ({
+      ...current,
+      sections: current.sections.map((section, i) =>
+        i === index ? { ...section, [key]: value } : section,
+      ),
+    }));
   }
   function updateMedicine(index, key, value) {
     setData((current) => ({
@@ -352,15 +374,36 @@ export default function TemplateLibraryPage() {
               </p>
             </div>
             {type === "ultrasound" && (
-              <button
-                type="button"
-                className="secondary"
-                onClick={() =>
-                  setData({ ...blankReport(), ...femalePelvisTemplate })
-                }
-              >
-                Load Female Pelvis sample
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() =>
+                    setData({ ...blankReport(), ...femalePelvisTemplate, reportStyle: "pelvis" })
+                  }
+                >
+                  Load Female Pelvis sample
+                </button>
+                <select
+                  aria-label="Load supplied ultrasound report draft"
+                  defaultValue=""
+                  onChange={(event) => {
+                    if (event.target.value === "") return;
+                    const draft = ultrasoundCatalog[Number(event.target.value)];
+                    if (draft) {
+                      setData({ ...blankReport(), ...structuredUltrasoundDraft(draft) });
+                      setName(draft.name);
+                      setEditingId(null);
+                    }
+                    event.target.value = "";
+                  }}
+                >
+                  <option value="">Load a supplied report draft</option>
+                  {ultrasoundCatalog.map((draft, index) => (
+                    <option key={draft.name} value={index}>{draft.name}</option>
+                  ))}
+                </select>
+              </>
             )}
           </div>
           <TextField label="Template name" value={name} onChange={setName} />
@@ -485,10 +528,57 @@ export default function TemplateLibraryPage() {
           {type === "ultrasound" && (
             <>
               <p className="library-caution">
-                Patient name, exam date, indication and consent are entered in
-                the patient form. Leave patient-specific measurements blank in
-                reusable templates.
+                Supplied drafts came from example reports. Patient identity and
+                measurements were removed. Review every finding and impression
+                against the current examination before finalizing.
               </p>
+              <label className="library-field">
+                <span>Report fields</span>
+                <select value={data.reportStyle || "pelvis"}
+                  onChange={(event) => update("reportStyle", event.target.value)}>
+                  <option value="sections">Labeled report fields</option>
+                  <option value="pelvis">Female Pelvis fields</option>
+                </select>
+              </label>
+              {data.reportStyle === "sections" ? (
+                <>
+                  <div className="library-fields">
+                    {[["Report type", "reportType"], ["Technique", "technique", true]].map(([label, key, multiline]) => (
+                      <TextField key={key} label={label} value={data[key]}
+                        onChange={(value) => update(key, value)} multiline={multiline} />
+                    ))}
+                  </div>
+                  <div className="library-subhead">
+                    <h3>Report fields</h3>
+                    <p>Give each finding its own label. The doctor will see these fields in the patient form.</p>
+                  </div>
+                  {(data.sections || []).map((section, index) => (
+                    <section className="library-medicine" key={index}>
+                      <div className="library-medicine-head">
+                        <strong>Field {index + 1}</strong>
+                        <button type="button" title="Remove field"
+                          onClick={() => update("sections", data.sections.filter((_, i) => i !== index))}>
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                      <div className="library-fields">
+                        <TextField label="Field name" value={section.label}
+                          onChange={(value) => updateSection(index, "label", value)} />
+                        <TextField label={section.label || "Finding / measurement"} value={section.text}
+                          onChange={(value) => updateSection(index, "text", value)} multiline rows={4} />
+                      </div>
+                    </section>
+                  ))}
+                  <button type="button" className="secondary"
+                    onClick={() => update("sections", [...(data.sections || []), { label: "", text: "" }])}>
+                    <Plus size={15} /> Add report field
+                  </button>
+                  <div className="library-fields">
+                    <TextField label="Impression" value={data.impression}
+                      onChange={(value) => update("impression", value)} multiline />
+                  </div>
+                </>
+              ) : (
               <div className="library-fields">
                 {ultrasoundFields.map(([label, key, multiline]) => (
                   <TextField
@@ -497,9 +587,11 @@ export default function TemplateLibraryPage() {
                     value={data[key]}
                     onChange={(value) => update(key, value)}
                     multiline={multiline}
+                    rows={key === "reportBody" ? 16 : 3}
                   />
                 ))}
               </div>
+              )}
             </>
           )}
           {error && <div className="error">{error}</div>}

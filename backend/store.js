@@ -983,6 +983,20 @@ export function openStore(filePath) {
         throw new Error("Enter an impression before finalizing.");
       if (module === "ultrasound" && !clean(input.details.technique, 10000))
         throw new Error("Enter the examination technique before finalizing.");
+      if (module === "ultrasound" && input.details.reportStyle === "general") {
+        if (!clean(input.details.reportBody, 30000))
+          throw new Error("Enter the report findings before finalizing.");
+        if (/_{4,}/.test(`${input.details.reportBody}\n${input.details.impression}`))
+          throw new Error("Fill or remove every blank measurement in the report before finalizing.");
+      }
+      if (module === "ultrasound" && input.details.reportStyle === "sections") {
+        const sections = input.details.sections;
+        if (!Array.isArray(sections) || !sections.some((section) => clean(section?.text, 30000)))
+          throw new Error("Enter the report findings before finalizing.");
+        if (sections.some((section) => /_{4,}/.test(String(section?.text || ""))) ||
+            /_{4,}/.test(String(input.details.impression || "")))
+          throw new Error("Fill or remove every blank measurement in the report before finalizing.");
+      }
       if (input.details.transvaginalPerformed && !input.details.consentRecorded)
         throw new Error(
           "Record consent for a transvaginal examination before finalizing.",

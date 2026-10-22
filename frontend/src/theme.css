@@ -143,8 +143,8 @@
 
   .form-section { border-bottom-color: var(--line); }
   .field { color: var(--body); font-size: 12px; }
-  .field input, .field select, .field textarea, .library-field input, .library-field textarea, .library-add-medicine select, .template-row select, .template-save input { border: 1px solid #CBD5E1; border-radius: 10px; background: white; color: var(--ink); }
-  .field input, .field select, .library-field input, .library-add-medicine select { min-height: 44px; }
+  .field input, .field select, .field textarea, .library-field input, .library-field textarea, .library-field select, .library-add-medicine select, .template-row select, .template-save input { border: 1px solid #CBD5E1; border-radius: 10px; background: white; color: var(--ink); }
+  .field input, .field select, .library-field input, .library-field select, .library-add-medicine select { min-height: 44px; }
   .field input:focus, .field select:focus, .field textarea:focus, .library-field input:focus, .library-field textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px #DBEAFE; outline: 0; }
   .field input::placeholder, .field textarea::placeholder { color: var(--muted); }
   .selected-patient { border-color: #BFDBFE; background: #EFF6FF; }

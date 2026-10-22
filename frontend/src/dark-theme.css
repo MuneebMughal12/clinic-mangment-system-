@@ -105,7 +105,7 @@
   .empty svg { color: #60A5FA; }
   .form-section, .form-actions, .detail-rows > div, .clinic-doctors-list > div { border-color: var(--dark-line); }
   .field, .library-field, .form-section p { color: #CBD5E1; }
-  .field input, .field select, .field textarea, .library-field input, .library-field textarea, .library-add-medicine select, .template-row select, .template-save input { background: #111827; border-color: #475569; color: white; }
+  .field input, .field select, .field textarea, .library-field input, .library-field textarea, .library-field select, .library-add-medicine select, .template-row select, .template-save input { background: #111827; border-color: #475569; color: white; }
   .field input:focus, .field select:focus, .field textarea:focus, .library-field input:focus, .library-field textarea:focus { border-color: #60A5FA; box-shadow: 0 0 0 3px #1D4ED84D; }
   .field input::placeholder, .field textarea::placeholder, .library-field input::placeholder, .searchbox input::placeholder { color: #94A3B8; }
   .field input:disabled { background: #243044; color: #94A3B8; }

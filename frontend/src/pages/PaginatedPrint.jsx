@@ -67,6 +67,33 @@ function splitUltrasound(encounter) {
   const original = encounter.details;
   const first = { ...original };
   const continuation = [];
+  if (original.reportStyle === "sections") {
+    first.sections = [];
+    first.impression = "";
+    let firstPageCharacters = 0;
+    for (const [index, section] of (original.sections || []).entries()) {
+      const label = section.label || `Finding ${index + 1}`;
+      const remaining = Math.max(0, 450 - firstPageCharacters);
+      const [head, tail] = remaining
+        ? splitText(section.text, remaining)
+        : ["", section.text];
+      if (head) first.sections.push({ label, text: head });
+      if (tail) continuation.push(...textBlocks(`finding-${index}`, head ? `${label} (continued)` : label, tail));
+      firstPageCharacters += head.length;
+    }
+    continuation.push(...textBlocks("impression", "Impression", original.impression));
+    continuation.push({ key: "signature", title: "Doctor signature / stamp", content: "______________________" });
+    return { firstEncounter: { ...encounter, details: first }, blocks: continuation };
+  }
+  if (original.reportStyle === "general") {
+    const [head, tail] = splitText(original.reportBody, 450);
+    first.reportBody = head;
+    first.impression = "";
+    continuation.push(...textBlocks("findings", "Findings (continued)", tail));
+    continuation.push(...textBlocks("impression", "Impression", original.impression));
+    continuation.push({ key: "signature", title: "Doctor signature / stamp", content: "______________________" });
+    return { firstEncounter: { ...encounter, details: first }, blocks: continuation };
+  }
   for (const [key, title] of [
     ["clinicalIndication", "Clinical indication"],
     ["technique", "Technique"],

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { BookOpen, Plus } from "lucide-react";
 import { femalePelvisTemplate } from "../reportTemplates.js";
+import ultrasoundCatalog from "../ultrasoundCatalog.json";
+import { structuredUltrasoundDraft } from "../ultrasoundSections.js";
 
 const ultrasoundPatientKeys = new Set([
   "referringPhysician",
@@ -11,6 +13,9 @@ const ultrasoundPatientKeys = new Set([
 ]);
 const ultrasoundReportKeys = [
   ...Object.keys(femalePelvisTemplate),
+  "reportStyle",
+  "reportBody",
+  "sections",
   "uterusSize",
   "endometrialThickness",
   "rightOvarySize",
@@ -82,20 +87,26 @@ export default function TemplatePanel({ module, setDetails }) {
   function applyUltrasound() {
     const template =
       ultrasoundId === "builtin"
-        ? { data: femalePelvisTemplate }
-        : templates.find(
-            (item) =>
-              item.id === Number(ultrasoundId) && item.type === "ultrasound",
-          );
+        ? { data: { ...femalePelvisTemplate, reportStyle: "pelvis" } }
+        : ultrasoundId.startsWith("supplied-")
+          ? { data: structuredUltrasoundDraft(ultrasoundCatalog[Number(ultrasoundId.slice(9))]) }
+          : templates.find(
+              (item) =>
+                item.id === Number(ultrasoundId) && item.type === "ultrasound",
+            );
     if (!template) return;
+    const source = template.data.reportBody && !template.data.sections
+      ? structuredUltrasoundDraft(template.data)
+      : template.data;
     const reportData = Object.fromEntries(
-      Object.entries(template.data).filter(
+      Object.entries(source).filter(
         ([key]) => !ultrasoundPatientKeys.has(key),
       ),
     );
     setDetails((current) => ({
       ...current,
       ...Object.fromEntries(ultrasoundReportKeys.map((key) => [key, ""])),
+      sections: [],
       ...structuredClone(reportData),
     }));
     setNotice(
@@ -175,6 +186,11 @@ export default function TemplatePanel({ module, setDetails }) {
             >
               <option value="">Choose a report template</option>
               <option value="builtin">Female Pelvis — sample</option>
+              {ultrasoundCatalog.map((item, index) => (
+                <option key={item.name} value={`supplied-${index}`}>
+                  {item.name}
+                </option>
+              ))}
               {reports.map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.name}
