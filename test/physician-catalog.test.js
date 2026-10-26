@@ -2,17 +2,18 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { medicineCatalog, physicianPlanCatalog, applyPhysicianPlanDraft } from "../frontend/src/physicianCatalog.js";
 
-test("supplied physician drafts link to medicines without prescribing source-photo doses", () => {
+test("supplied physician drafts retain legible photo details for doctor review", () => {
   const names = new Set(medicineCatalog.map((item) => item.name));
   assert.equal(names.size, medicineCatalog.length);
   assert.ok(names.has("Paracetamol"));
   assert.ok(names.has("Oral rehydration salts (ORS)"));
   for (const medicine of medicineCatalog) {
     assert.equal(medicine.data.name, medicine.name);
-    assert.equal(medicine.data.dose, "");
-    assert.equal(medicine.data.frequency, "");
-    assert.equal(medicine.data.duration, "");
+    assert.ok(medicine.data.sourceNote);
   }
+  assert.equal(medicineCatalog.find((item) => item.name === "Telmisartan").data.strength, "40 mg");
+  assert.equal(medicineCatalog.find((item) => item.name === "Telmisartan").data.frequency, "Once daily (OD)");
+  assert.equal(medicineCatalog.find((item) => item.name === "Telmisartan").data.dose, "");
   assert.ok(physicianPlanCatalog.length >= 10);
   for (const plan of physicianPlanCatalog) {
     assert.equal(plan.data.diagnosis, plan.name);

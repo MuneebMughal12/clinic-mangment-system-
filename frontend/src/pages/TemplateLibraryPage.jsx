@@ -13,6 +13,7 @@ const medicineFields = [
   ["Frequency / timing", "frequency"],
   ["Before / after food", "food"],
   ["Duration", "duration"],
+  ["Supplied photo note (review before use)", "sourceNote"],
 ];
 
 const ultrasoundFields = [
@@ -420,9 +421,13 @@ export default function TemplateLibraryPage() {
                   if (event.target.value === "") return;
                   const draft = medicineCatalog[Number(event.target.value)];
                   if (draft) {
-                    setData(normalizeData("medicine", draft.data));
-                    setName(draft.name);
-                    setEditingId(null);
+                    const saved = templates.find((item) => item.type === "medicine" && item.name === draft.name);
+                    if (saved) selectTemplate(saved);
+                    else {
+                      setData(normalizeData("medicine", draft.data));
+                      setName(draft.name);
+                      setEditingId(null);
+                    }
                   }
                   event.target.value = "";
                 }}>
@@ -437,9 +442,13 @@ export default function TemplateLibraryPage() {
                   if (event.target.value === "") return;
                   const draft = physicianPlanCatalog[Number(event.target.value)];
                   if (draft) {
-                    setData(normalizeData("diagnosis", draft.data));
-                    setName(draft.name);
-                    setEditingId(null);
+                    const saved = templates.find((item) => item.type === "diagnosis" && item.name === draft.name);
+                    if (saved) selectTemplate(saved);
+                    else {
+                      setData(normalizeData("diagnosis", draft.data));
+                      setName(draft.name);
+                      setEditingId(null);
+                    }
                   }
                   event.target.value = "";
                 }}>
@@ -459,6 +468,7 @@ export default function TemplateLibraryPage() {
                   key={key}
                   label={label}
                   value={data[key]}
+                  multiline={key === "sourceNote"}
                   onChange={(value) => update(key, value)}
                 />
               ))}
@@ -553,7 +563,7 @@ export default function TemplateLibraryPage() {
                     </button>
                   </div>
                   <div className="library-fields">
-                    {medicineFields.map(([label, key]) => (
+                    {medicineFields.filter(([, key]) => key !== "sourceNote").map(([label, key]) => (
                       <TextField
                         key={key}
                         label={label}

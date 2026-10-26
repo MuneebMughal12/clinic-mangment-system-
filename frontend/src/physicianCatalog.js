@@ -1,5 +1,25 @@
 // Transcribed from the supplied photographs as editable starting points.
-// No dose, route, frequency or duration is inferred from a generic photograph.
+// Only legible details from the supplied photographs are used. Directions are
+// examples for doctor review, never a patient-specific prescription.
+const photographedDirections = {
+  "Amlodipine": { strength: "5 mg", frequency: "Once daily (OD)", sourceNote: "Hypertension photograph: 5 mg OD. Doctor to confirm patient directions." },
+  "Telmisartan": { strength: "40 mg", frequency: "Once daily (OD)", sourceNote: "Hypertension photograph: 40 mg OD. Doctor to confirm patient directions." },
+  "Hydrochlorothiazide": { strength: "12.5 mg", frequency: "Once daily (OD)", sourceNote: "Hypertension photograph: 12.5 mg OD. Doctor to confirm patient directions." },
+  "Metformin": { strength: "500 mg", frequency: "Twice daily (BD)", sourceNote: "Diabetes photograph: 500 mg BD. Doctor to confirm patient directions." },
+  "Glimepiride": { strength: "1 mg", frequency: "Once daily (OD)", food: "Before breakfast", sourceNote: "Diabetes photograph: 1 mg OD before breakfast. Doctor to confirm patient directions." },
+  "Azithromycin": { strength: "500 mg", frequency: "Once daily (OD)", duration: "3 days", sourceNote: "Sore throat photograph: 500 mg OD for 3 days if bacterial cause suspected. Doctor must confirm diagnosis and treatment." },
+  "Cetirizine": { strength: "10 mg", sourceNote: "Common cold photograph: 10 mg. Doctor to set dose and timing." },
+  "Levocetirizine": { strength: "5 mg", sourceNote: "Common cold photograph: 5 mg. Doctor to set dose and timing." },
+  "Ibuprofen": { strength: "400 mg", sourceNote: "Headache photograph: 400 mg. Doctor to set dose and timing." },
+  "Naproxen": { strength: "250 mg", sourceNote: "Headache photograph: 250 mg. Doctor to set dose and timing." },
+  "Metronidazole": { strength: "400 mg", frequency: "Three times daily (TDS)", food: "After food", duration: "5 days", sourceNote: "Human bite photograph: 400 mg TDS for 5 days after food. Doctor to confirm patient directions." },
+  "Amoxicillin + clavulanic acid": { strength: "625 mg", frequency: "Three times daily (TDS)", food: "After food", duration: "5 days", sourceNote: "Human bite photograph: 625 mg TDS for 5 days after food. Other supplied notes use different directions; doctor must choose for this patient." },
+  "Baclofen": { strength: "5 mg", frequency: "Twice daily (BD)", duration: "3 days", sourceNote: "Hiccups photograph: 5 mg BD for 3 days. Doctor to confirm patient directions." },
+  "Metoclopramide": { strength: "10 mg", frequency: "Twice daily (BD)", duration: "5 days", sourceNote: "Hiccups photograph: 10 mg BD for 5 days. Doctor to confirm patient directions." },
+  "Coenzyme Q10": { strength: "100 mg", frequency: "Once daily (OD)", duration: "3 months", sourceNote: "Low sperm count photograph: 100 mg OD for 3 months. Doctor to confirm patient directions." },
+  "Lactulose": { dose: "10–15 mL", frequency: "At night", sourceNote: "Constipation photograph: 10–15 mL at night. Doctor to confirm patient directions." },
+  "Paracetamol": { strength: "500 mg", sourceNote: "Multiple supplied photographs list paracetamol with varying directions. Doctor to choose dose and timing." },
+};
 const medicineNames = [
   "Amoxicillin + clavulanic acid",
   "Azithromycin",
@@ -43,7 +63,7 @@ export const medicineCatalog = medicineNames
   .sort((a, b) => a.localeCompare(b))
   .map((name) => ({
     name,
-    data: { name, strength: "", dose: "", route: "", frequency: "", food: "", duration: "" },
+    data: { name, strength: "", dose: "", route: "", frequency: "", food: "", duration: "", sourceNote: "Supplied photograph identified this medicine; directions must be entered by the doctor.", ...photographedDirections[name] },
   }));
 
 function plan(name, medicines, extras = {}) {

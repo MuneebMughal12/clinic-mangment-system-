@@ -340,7 +340,7 @@ test("two doctor logins share one clinic library and keep distinct print identit
       name: "Shared medicine",
       data: { name: "Sample medicine", dose: "Doctor review" },
     });
-    assert.equal(store.listTemplates(clinic.id).length, 1);
+    assert.ok(store.listTemplates(clinic.id).some((item) => item.name === "Shared medicine"));
     const visit = store.saveEncounter(
       clinic.id,
       {
@@ -430,7 +430,7 @@ test("two doctor logins share one clinic library and keep distinct print identit
       store.clinicLogin("second-doctor", "new-second-password")?.doctorName,
       "Dr Second Renamed",
     );
-    assert.equal(store.listTemplates(clinic.id).length, 1);
+    assert.ok(store.listTemplates(clinic.id).some((item) => item.name === "Shared medicine"));
   } finally {
     store?.close();
     rmSync(directory, { recursive: true, force: true });
@@ -645,10 +645,11 @@ test("saved templates are editable and private to each clinic", () => {
       data: { name: "Tablet A", dose: "1 tablet", frequency: "Twice daily" },
     });
     assert.equal(
-      store.listTemplates(first.id, "medicine")[0].data.frequency,
+      store.listTemplates(first.id, "medicine").find((item) => item.name === "Tablet A").data.frequency,
       "Twice daily",
     );
-    assert.equal(store.listTemplates(second.id).length, 0);
+    assert.ok(store.listTemplates(second.id).some((item) => item.name === "Telmisartan"));
+    assert.ok(!store.listTemplates(second.id).some((item) => item.name === "Tablet A"));
     assert.throws(
       () =>
         store.saveTemplate(first.id, {
@@ -668,9 +669,31 @@ test("saved templates are editable and private to each clinic", () => {
       name: "Tablet A",
       data: { name: "Tablet A", dose: "2 tablets" },
     });
-    assert.equal(store.listTemplates(first.id)[0].data.dose, "2 tablets");
+    assert.equal(store.listTemplates(first.id).find((item) => item.name === "Tablet A").data.dose, "2 tablets");
     store.deleteTemplate(first.id, saved.id);
-    assert.equal(store.listTemplates(first.id).length, 0);
+    assert.ok(!store.listTemplates(first.id).some((item) => item.name === "Tablet A"));
+    assert.ok(store.listTemplates(first.id).some((item) => item.name === "Telmisartan"));
+  } finally {
+    store.close();
+  }
+});
+
+test("supplied physician templates install once and preserve clinic edits and deletions", () => {
+  const store = openStore(":memory:");
+  try {
+    const clinic = store.createClinicAccount({
+      clinicName: "Clinic", doctorName: "Dr A", username: "template-owner", password: "password-123",
+    });
+    const first = store.listTemplates(clinic.id);
+    assert.ok(first.some((item) => item.type === "medicine" && item.name === "Telmisartan"));
+    assert.ok(first.some((item) => item.type === "diagnosis" && item.name === "Hypertension"));
+    const telmisartan = first.find((item) => item.type === "medicine" && item.name === "Telmisartan");
+    store.saveTemplate(clinic.id, { id: telmisartan.id, type: "medicine", name: "Telmisartan", data: { ...telmisartan.data, strength: "Clinic edited" } });
+    const amlodipine = first.find((item) => item.type === "medicine" && item.name === "Amlodipine");
+    store.deleteTemplate(clinic.id, amlodipine.id);
+    const again = store.listTemplates(clinic.id);
+    assert.equal(again.find((item) => item.id === telmisartan.id).data.strength, "Clinic edited");
+    assert.ok(!again.some((item) => item.name === "Amlodipine"));
   } finally {
     store.close();
   }

@@ -142,7 +142,7 @@ export default function TemplatePanel({ module, setDetails }) {
                 onChange={(event) => setMedicineId(event.target.value)}
               >
                 <option value="">Choose a saved medicine</option>
-                {medicineCatalog.map((item, index) => (
+                {medicineCatalog.map((item, index) => !medicines.some((saved) => saved.name === item.name) && (
                   <option key={item.name} value={`supplied-${index}`}>{item.name} — supplied draft</option>
                 ))}
                 {medicines.map((item) => (
@@ -170,7 +170,7 @@ export default function TemplatePanel({ module, setDetails }) {
                 }}
               >
                 <option value="">Choose a saved plan (e.g. Fever)</option>
-                {physicianPlanCatalog.map((item, index) => (
+                {physicianPlanCatalog.map((item, index) => !plans.some((saved) => saved.name === item.name) && (
                   <option key={item.name} value={`supplied-${index}`}>{item.name} — supplied draft</option>
                 ))}
                 {plans.map((item) => (

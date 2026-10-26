@@ -2,6 +2,7 @@ import { DatabaseSync } from "node:sqlite";
 import { existsSync, unlinkSync } from "node:fs";
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { clinicPreset } from "../shared/clinic-preset.js";
+import { medicineCatalog, physicianPlanCatalog } from "../frontend/src/physicianCatalog.js";
 
 const previousUltrasoundQualification = "MBBS, PGD in Medical Diagnostic Ultrasound\nEx Senior Speciality Registrar\nDepartment of Clinical & Diagnostic Radiology\nCMH Kharian";
 
@@ -179,6 +180,12 @@ export function openStore(filePath) {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       UNIQUE(clinic_id, type, name)
+    );
+    CREATE TABLE IF NOT EXISTS template_catalog_installs (
+      clinic_id INTEGER NOT NULL REFERENCES clinics(id),
+      catalog_key TEXT NOT NULL,
+      installed_at TEXT NOT NULL,
+      PRIMARY KEY (clinic_id, catalog_key)
     );
   `);
 
@@ -1162,10 +1169,32 @@ export function openStore(filePath) {
       .all(Number(clinicId), module);
   }
 
+  function ensurePhysicianTemplates(clinicId) {
+    const id = Number(clinicId);
+    if (!db.prepare("SELECT id FROM clinics WHERE id = ?").get(id)) return;
+    const key = "physician-source-2026-10-26-v1";
+    if (db.prepare("SELECT 1 FROM template_catalog_installs WHERE clinic_id = ? AND catalog_key = ?").get(id, key)) return;
+    const now = new Date().toISOString();
+    const insert = db.prepare(`INSERT OR IGNORE INTO templates
+      (clinic_id, type, name, data_json, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)`);
+    db.exec("BEGIN IMMEDIATE");
+    try {
+      for (const item of medicineCatalog) insert.run(id, "medicine", item.name, JSON.stringify(item.data), now, now);
+      for (const item of physicianPlanCatalog) insert.run(id, "diagnosis", item.name, JSON.stringify(item.data), now, now);
+      db.prepare("INSERT INTO template_catalog_installs (clinic_id, catalog_key, installed_at) VALUES (?, ?, ?)").run(id, key, now);
+      db.exec("COMMIT");
+    } catch (error) {
+      db.exec("ROLLBACK");
+      throw error;
+    }
+  }
+
   function listTemplates(clinicId, type) {
     if (type && !["medicine", "diagnosis", "ultrasound"].includes(type)) {
       throw new Error("Invalid template type.");
     }
+    ensurePhysicianTemplates(clinicId);
     const rows = type
       ? db
           .prepare(
