@@ -3,6 +3,7 @@ import { BookOpen, Plus, Save, Trash2 } from "lucide-react";
 import { femalePelvisTemplate } from "../reportTemplates.js";
 import ultrasoundCatalog from "../ultrasoundCatalog.json";
 import { structuredUltrasoundDraft } from "../ultrasoundSections.js";
+import { medicineCatalog, physicianPlanCatalog } from "../physicianCatalog.js";
 
 const medicineFields = [
   ["Medicine name", "name"],
@@ -50,6 +51,7 @@ const blankPlan = () => ({
   findings: "",
   diagnosis: "",
   medicines: [blankMedicine()],
+  suggestedMedicines: [],
   tests: "",
   advice: "",
   followUp: "",
@@ -74,6 +76,9 @@ function normalizeData(type, source = {}) {
       medicines: Array.isArray(source.medicines)
         ? source.medicines.map((row) => normalizeData("medicine", row))
         : [blankMedicine()],
+      suggestedMedicines: Array.isArray(source.suggestedMedicines)
+        ? source.suggestedMedicines.map(String)
+        : [],
       tests: source.tests ?? "",
       advice: source.advice ?? "",
       followUp: source.followUp ?? "",
@@ -275,6 +280,10 @@ export default function TemplateLibraryPage() {
 
   const currentTemplates = templates.filter((item) => item.type === type);
   const savedMedicines = templates.filter((item) => item.type === "medicine");
+  const availableMedicineNames = [...new Set([
+    ...medicineCatalog.map((item) => item.name),
+    ...savedMedicines.map((item) => item.data.name).filter(Boolean),
+  ])].sort((a, b) => a.localeCompare(b));
   return (
     <div className="library-page">
       <div className="page-head compact">
@@ -405,9 +414,45 @@ export default function TemplateLibraryPage() {
                 </select>
               </>
             )}
+            {type === "medicine" && (
+              <select aria-label="Load supplied medicine draft" defaultValue=""
+                onChange={(event) => {
+                  if (event.target.value === "") return;
+                  const draft = medicineCatalog[Number(event.target.value)];
+                  if (draft) {
+                    setData(normalizeData("medicine", draft.data));
+                    setName(draft.name);
+                    setEditingId(null);
+                  }
+                  event.target.value = "";
+                }}>
+                <option value="">Load a supplied medicine draft</option>
+                {medicineCatalog.map((draft, index) =>
+                  <option key={draft.name} value={index}>{draft.name}</option>)}
+              </select>
+            )}
+            {type === "diagnosis" && (
+              <select aria-label="Load supplied physician plan draft" defaultValue=""
+                onChange={(event) => {
+                  if (event.target.value === "") return;
+                  const draft = physicianPlanCatalog[Number(event.target.value)];
+                  if (draft) {
+                    setData(normalizeData("diagnosis", draft.data));
+                    setName(draft.name);
+                    setEditingId(null);
+                  }
+                  event.target.value = "";
+                }}>
+                <option value="">Load a supplied physician plan draft</option>
+                {physicianPlanCatalog.map((draft, index) =>
+                  <option key={draft.name} value={index}>{draft.name}</option>)}
+              </select>
+            )}
           </div>
           <TextField label="Template name" value={name} onChange={setName} />
           {type === "medicine" && (
+            <>
+            <p className="library-caution">These names came from supplied photographs. The doctor must set and review the strength, dose, route, timing and duration for each patient.</p>
             <div className="library-fields">
               {medicineFields.map(([label, key]) => (
                 <TextField
@@ -418,9 +463,11 @@ export default function TemplateLibraryPage() {
                 />
               ))}
             </div>
+            </>
           )}
           {type === "diagnosis" && (
             <>
+              <p className="library-caution">Supplied plans are editable drafts from photographs. Confirm the diagnosis and choose treatment for the current patient.</p>
               <div className="library-fields library-plan-fields">
                 <TextField label="Presenting complaints" value={data.complaints}
                   onChange={(value) => update("complaints", value)} multiline />
@@ -441,6 +488,31 @@ export default function TemplateLibraryPage() {
                   These are starting instructions. Review each dose for the
                   patient.
                 </p>
+              </div>
+              <div className="library-suggestions">
+                <strong>Related medicines from the supplied notes</strong>
+                <p>These stay as suggestions until the doctor chooses them for a patient.</p>
+                <select aria-label="Add related medicine" value=""
+                  onChange={(event) => {
+                    if (event.target.value) update("suggestedMedicines", [
+                      ...(data.suggestedMedicines || []), event.target.value,
+                    ]);
+                  }}>
+                  <option value="">Add a related medicine</option>
+                  {availableMedicineNames.filter((medicineName) =>
+                    !(data.suggestedMedicines || []).includes(medicineName))
+                    .map((medicineName) => <option key={medicineName}>{medicineName}</option>)}
+                </select>
+                <div className="library-suggestion-options">
+                  {(data.suggestedMedicines || []).map((medicineName) => (
+                    <div key={medicineName}>
+                      <span>{medicineName}</span>
+                      <button type="button" aria-label={`Remove ${medicineName} suggestion`}
+                        onClick={() => update("suggestedMedicines", data.suggestedMedicines.filter(
+                          (item) => item !== medicineName))}>×</button>
+                    </div>
+                  ))}
+                </div>
               </div>
               <div className="library-add-medicine">
                 <select

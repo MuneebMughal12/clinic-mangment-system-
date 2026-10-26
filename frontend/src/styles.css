@@ -1427,6 +1427,25 @@ p {
   display: grid;
   gap: 10px;
 }
+.template-suggestions {
+  border: 1px solid #d5e2db;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 12px;
+}
+.template-suggestions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 10px 0;
+}
+.template-suggestions label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.template-suggestions small { display: block; }
 .template-row,
 .template-save {
   display: flex;
@@ -2415,6 +2434,35 @@ p {
   margin: 5px 0 0;
   font-size: 11px;
 }
+.library-editor-head select,
+.library-suggestions select {
+  min-height: 39px;
+  min-width: 210px;
+  max-width: 360px;
+  border: 1px solid #d5e3dc;
+  border-radius: 7px;
+  background: #fff;
+  padding: 8px 10px;
+  color: #233d34;
+}
+.library-suggestions {
+  border: 1px solid #d5e3dc;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 12px 0;
+  font-size: 12px;
+}
+.library-suggestions p { margin: 6px 0 10px; font-size: 11px; }
+.library-suggestion-options { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.library-suggestion-options > div {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #d5e3dc;
+  border-radius: 6px;
+  padding: 4px 6px;
+}
+.library-suggestion-options button { border: 0; background: transparent; cursor: pointer; }
 .library-field {
   display: flex;
   flex-direction: column;

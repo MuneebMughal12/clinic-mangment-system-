@@ -798,6 +798,29 @@ test("supplied ultrasound drafts stay editable and cannot finalize with blank me
   }
 });
 
+test("a prescribed medicine needs dose, route and frequency before physician finalization", () => {
+  const store = openStore(":memory:");
+  try {
+    const clinic = store.createClinicAccount({
+      clinicName: "Clinic A", doctorName: "Dr A", username: "clinic-a", password: "password-a",
+    });
+    const base = {
+      module: "physician", patient: { name: "Patient A" },
+      details: { diagnosis: "Reviewed", medicines: [{ name: "Paracetamol", dose: "", frequency: "" }] },
+      finalize: true, reviewConfirmed: true,
+    };
+    assert.throws(() => store.saveEncounter(clinic.id, base), /dose, route and frequency/i);
+    const saved = store.saveEncounter(clinic.id, {
+      ...base, details: { ...base.details,
+        medicines: [{ name: "Paracetamol", dose: "Doctor-entered dose", route: "Doctor-entered route", frequency: "Doctor-entered timing" }],
+      },
+    });
+    assert.equal(saved.status, "final");
+  } finally {
+    store.close();
+  }
+});
+
 test("SQLite backup can be reopened with patients and final records intact", () => {
   const directory = mkdtempSync(join(tmpdir(), "clinic-desk-backup-"));
   const source = join(directory, "source.sqlite");

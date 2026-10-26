@@ -979,6 +979,12 @@ export function openStore(filePath) {
         throw new Error("Confirm the doctor's review before finalizing.");
       if (module === "physician" && !clean(input.details.diagnosis, 10000))
         throw new Error("Enter a diagnosis before finalizing.");
+      if (module === "physician") {
+        const medicines = Array.isArray(input.details.medicines) ? input.details.medicines : [];
+        if (medicines.some((medicine) => clean(medicine?.name) &&
+            (!clean(medicine?.dose) || !clean(medicine?.route) || !clean(medicine?.frequency))))
+          throw new Error("Enter the dose, route and frequency for every prescribed medicine before finalizing.");
+      }
       if (module === "ultrasound" && !clean(input.details.impression, 10000))
         throw new Error("Enter an impression before finalizing.");
       if (module === "ultrasound" && !clean(input.details.technique, 10000))

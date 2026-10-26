@@ -3,6 +3,7 @@ import { BookOpen, Plus } from "lucide-react";
 import { femalePelvisTemplate } from "../reportTemplates.js";
 import ultrasoundCatalog from "../ultrasoundCatalog.json";
 import { structuredUltrasoundDraft } from "../ultrasoundSections.js";
+import { medicineCatalog, physicianPlanCatalog, applyPhysicianPlanDraft } from "../physicianCatalog.js";
 
 const ultrasoundPatientKeys = new Set([
   "referringPhysician",
@@ -28,6 +29,7 @@ export default function TemplatePanel({ module, setDetails }) {
   const [templates, setTemplates] = useState([]);
   const [medicineId, setMedicineId] = useState("");
   const [diagnosisId, setDiagnosisId] = useState("");
+  const [selectedSuggestedMedicines, setSelectedSuggestedMedicines] = useState([]);
   const [ultrasoundId, setUltrasoundId] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -48,9 +50,9 @@ export default function TemplatePanel({ module, setDetails }) {
   }, []);
 
   function applyMedicine() {
-    const template = templates.find(
-      (item) => item.id === Number(medicineId) && item.type === "medicine",
-    );
+    const template = medicineId.startsWith("supplied-")
+      ? medicineCatalog[Number(medicineId.slice(9))]
+      : templates.find((item) => item.id === Number(medicineId) && item.type === "medicine");
     if (!template) return;
     setDetails((current) => {
       const rows = current.medicines || [];
@@ -64,23 +66,20 @@ export default function TemplatePanel({ module, setDetails }) {
       };
     });
     setNotice(
-      "Medicine added. Review the dose and instructions for this patient.",
+      "Medicine added. Enter and review its dose, route and timing for this patient.",
     );
   }
 
   function applyDiagnosis() {
-    const template = templates.find(
-      (item) => item.id === Number(diagnosisId) && item.type === "diagnosis",
-    );
+    const template = diagnosisId.startsWith("supplied-")
+      ? physicianPlanCatalog[Number(diagnosisId.slice(9))]
+      : templates.find((item) => item.id === Number(diagnosisId) && item.type === "diagnosis");
     if (!template) return;
-    setDetails((current) => {
-      const plan = structuredClone(template.data);
-      for (const key of ["complaints", "symptoms", "findings"])
-        if (!plan[key]) delete plan[key];
-      return { ...current, ...plan };
-    });
+    setDetails((current) => applyPhysicianPlanDraft(
+      current, template.data, selectedSuggestedMedicines, templates,
+    ));
     setNotice(
-      "Physician plan applied. Review every medicine and instruction for this patient.",
+      "Physician plan applied. Complete and review every selected medicine before finalizing.",
     );
   }
 
@@ -117,6 +116,10 @@ export default function TemplatePanel({ module, setDetails }) {
   const medicines = templates.filter((item) => item.type === "medicine");
   const plans = templates.filter((item) => item.type === "diagnosis");
   const reports = templates.filter((item) => item.type === "ultrasound");
+  const selectedPlan = diagnosisId.startsWith("supplied-")
+    ? physicianPlanCatalog[Number(diagnosisId.slice(9))]
+    : plans.find((item) => item.id === Number(diagnosisId));
+  const planSuggestions = selectedPlan?.data?.suggestedMedicines || [];
   return (
     <section className="template-panel">
       <div className="template-heading">
@@ -139,6 +142,9 @@ export default function TemplatePanel({ module, setDetails }) {
                 onChange={(event) => setMedicineId(event.target.value)}
               >
                 <option value="">Choose a saved medicine</option>
+                {medicineCatalog.map((item, index) => (
+                  <option key={item.name} value={`supplied-${index}`}>{item.name} — supplied draft</option>
+                ))}
                 {medicines.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.name}
@@ -158,9 +164,15 @@ export default function TemplatePanel({ module, setDetails }) {
               <label>Physician plan</label>
               <select
                 value={diagnosisId}
-                onChange={(event) => setDiagnosisId(event.target.value)}
+                onChange={(event) => {
+                  setDiagnosisId(event.target.value);
+                  setSelectedSuggestedMedicines([]);
+                }}
               >
                 <option value="">Choose a saved plan (e.g. Fever)</option>
+                {physicianPlanCatalog.map((item, index) => (
+                  <option key={item.name} value={`supplied-${index}`}>{item.name} — supplied draft</option>
+                ))}
                 {plans.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.name}
@@ -176,6 +188,22 @@ export default function TemplatePanel({ module, setDetails }) {
                 Apply plan
               </button>
             </div>
+            {planSuggestions.length > 0 && (
+              <div className="template-suggestions">
+                <strong>Related medicines — choose only those prescribed for this patient</strong>
+                <div>
+                  {planSuggestions.map((name) => (
+                    <label key={name}>
+                      <input type="checkbox" checked={selectedSuggestedMedicines.includes(name)}
+                        onChange={(event) => setSelectedSuggestedMedicines((current) =>
+                          event.target.checked ? [...current, name] : current.filter((item) => item !== name))} />
+                      <span>{name}</span>
+                    </label>
+                  ))}
+                </div>
+                <small>Dose, route and timing must be entered after applying the plan.</small>
+              </div>
+            )}
           </>
         ) : (
           <div className="template-row">
